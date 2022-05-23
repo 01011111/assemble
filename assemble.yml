@@ -1,0 +1,22 @@
+teams:
+  - Admin
+  - BackEnd
+  - DevOps
+  - FronEnd
+  - QA
+  - Mobile
+
+access:
+  '*':
+    - team: Admin
+      role: admin
+    - team: QA
+      role: read
+
+  assemble:
+    - team: BackEnd
+      role: maintain
+    - team: DevOps
+      role: write
+    - team: QA
+      role: triage
