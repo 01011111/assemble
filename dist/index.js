@@ -41,8 +41,8 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const GH_TOKEN = (0, core_1.getInput)('token');
-            const octokit = (0, github_1.getOctokit)(GH_TOKEN);
             const configPath = (0, core_1.getInput)('config');
+            const octokit = (0, github_1.getOctokit)(GH_TOKEN);
             const teams = yield getOrgTeams(octokit);
             (0, core_1.debug)(`The org teams: ${JSON.stringify(teams, null, 2)}`);
             const repos = yield getOrgRepos(octokit);

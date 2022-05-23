@@ -22,8 +22,9 @@ async function getOrgRepos (octokit: any): Promise<void> {
 async function run (): Promise<void> {
   try {
     const GH_TOKEN = getInput('token')
-    const octokit = getOctokit(GH_TOKEN)
     const configPath = getInput('config')
+
+    const octokit = getOctokit(GH_TOKEN)
 
     const teams = await getOrgTeams(octokit)
     debug(`The org teams: ${JSON.stringify(teams, null, 2)}`)
