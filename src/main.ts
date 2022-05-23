@@ -1,18 +1,12 @@
-import * as core from '@actions/core'
-import {wait} from './wait'
+import { debug, setFailed } from '@actions/core'
+import { context } from '@actions/github'
 
-async function run(): Promise<void> {
+async function run (): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
-
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    core.setOutput('time', new Date().toTimeString())
+    const payload: string = JSON.stringify(context.payload, null, 2)
+    debug(`The event payload: ${payload}`)
   } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) setFailed(error.message)
   }
 }
 
