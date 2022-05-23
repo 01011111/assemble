@@ -85,7 +85,7 @@ function applyRepoAccess(octokit, repo, teams) {
                 repo,
                 permission
             });
-            if (status !== 200) {
+            if (status !== 204) {
                 throw Error(`Failed to add repo to team: ${status}\n${data}`);
             }
         }

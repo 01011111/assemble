@@ -93,7 +93,7 @@ async function applyRepoAccess (octokit: any, repo: string, teams: TeamAccess[])
       permission
     })
 
-    if (status !== 200) {
+    if (status !== 204) {
       throw Error(`Failed to add repo to team: ${status}\n${data}`)
     }
   }
