@@ -121,15 +121,12 @@ async function run (): Promise<void> {
     const teams = await getOrgTeams(octokit)
     debug(`The org teams: ${JSON.stringify(teams, null, 2)}`)
 
-    const repos = await getOrgRepos(octokit)
-    debug(`The org repos: ${JSON.stringify(repos, null, 2)}`)
-
     const config = await loadConfig(configPath)
     debug(`The config: ${JSON.stringify(config, null, 2)}`)
 
     await checkTeams(octokit, formatTeams(teams), config.teams)
 
-    await checkRepoAccess(octokit, config.repos)
+    await checkRepoAccess(octokit, config.access)
   } catch (error) {
     if (error instanceof Error) setFailed(error.message)
   }

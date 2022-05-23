@@ -113,12 +113,10 @@ function run() {
             const octokit = (0, github_1.getOctokit)(GH_TOKEN);
             const teams = yield getOrgTeams(octokit);
             (0, core_1.debug)(`The org teams: ${JSON.stringify(teams, null, 2)}`);
-            const repos = yield getOrgRepos(octokit);
-            (0, core_1.debug)(`The org repos: ${JSON.stringify(repos, null, 2)}`);
             const config = yield (0, fs_1.loadConfig)(configPath);
             (0, core_1.debug)(`The config: ${JSON.stringify(config, null, 2)}`);
             yield checkTeams(octokit, formatTeams(teams), config.teams);
-            yield checkRepoAccess(octokit, config.repos);
+            yield checkRepoAccess(octokit, config.access);
         }
         catch (error) {
             if (error instanceof Error)
