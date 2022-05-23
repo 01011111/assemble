@@ -100,11 +100,16 @@ async function applyRepoAccess (octokit: any, repo: string, teams: TeamAccess[])
 }
 
 async function checkRepoAccess (octokit: any, config: { [key: string]: TeamAccess[] }): Promise<void> {
+  const repoList = Object.keys(config)
+  if (repoList.indexOf('*') > -1) {
+    const orgRepos = await getOrgRepos(octokit)
+    const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config['*']))
+    await Promise.all(promises)
+  }
+
   for (const repoKey in config) {
     if (repoKey === '*') {
-      const orgRepos = await getOrgRepos(octokit)
-      const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config[repoKey]))
-      await Promise.all(promises)
+      continue
     } else {
       await applyRepoAccess(octokit, repoKey, config[repoKey])
     }
