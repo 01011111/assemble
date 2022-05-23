@@ -93,11 +93,15 @@ function applyRepoAccess(octokit, repo, teams) {
 }
 function checkRepoAccess(octokit, config) {
     return __awaiter(this, void 0, void 0, function* () {
+        const repoList = Object.keys(config);
+        if (repoList.indexOf('*') > -1) {
+            const orgRepos = yield getOrgRepos(octokit);
+            const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config['*']));
+            yield Promise.all(promises);
+        }
         for (const repoKey in config) {
             if (repoKey === '*') {
-                const orgRepos = yield getOrgRepos(octokit);
-                const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config[repoKey]));
-                yield Promise.all(promises);
+                continue;
             }
             else {
                 yield applyRepoAccess(octokit, repoKey, config[repoKey]);
