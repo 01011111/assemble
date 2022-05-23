@@ -21,20 +21,50 @@ const github_1 = __nccwpck_require__(5438);
 const fs_1 = __nccwpck_require__(3412);
 function getOrgTeams(octokit) {
     return __awaiter(this, void 0, void 0, function* () {
-        const teams = yield octokit.rest.teams.list({
+        const { data, status } = yield octokit.rest.teams.list({
             org: github_1.context.payload.organization.login,
             per_page: 100
         });
-        return teams;
+        if (status !== 200) {
+            throw Error(`Failed to get org teams: ${status}\n${data}`);
+        }
+        return data;
     });
 }
 function getOrgRepos(octokit) {
     return __awaiter(this, void 0, void 0, function* () {
-        const repos = yield octokit.rest.repos.listForOrg({
+        const { data, status } = yield octokit.rest.repos.listForOrg({
             org: github_1.context.payload.organization.login,
             per_page: 100
         });
-        return repos;
+        if (status !== 200) {
+            throw Error(`Failed to get org repos: ${status}\n${data}`);
+        }
+        return data;
+    });
+}
+function formatTeams(raw) {
+    const teams = {};
+    for (const team of raw) {
+        teams[team.slug] = Object.assign({}, team);
+    }
+    return teams;
+}
+function formatTeamName(name) {
+    return name.toLocaleLowerCase().replace(/\s+/g, '-');
+}
+function checkTeams(octokit, current, target) {
+    return __awaiter(this, void 0, void 0, function* () {
+        for (const team of target) {
+            const slug = formatTeamName(team);
+            if (!current[slug]) {
+                (0, core_1.debug)(`Creating team ${team}`);
+                yield octokit.rest.teams.create({
+                    org: github_1.context.payload.organization.login,
+                    name: team
+                });
+            }
+        }
     });
 }
 function run() {
@@ -49,6 +79,7 @@ function run() {
             (0, core_1.debug)(`The org repos: ${JSON.stringify(repos, null, 2)}`);
             const config = yield (0, fs_1.loadConfig)(configPath);
             (0, core_1.debug)(`The config: ${JSON.stringify(config, null, 2)}`);
+            yield checkTeams(octokit, formatTeams(teams), config.teams);
         }
         catch (error) {
             if (error instanceof Error)
