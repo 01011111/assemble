@@ -18,13 +18,36 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
-const loadConfig_1 = __nccwpck_require__(8634);
+const fs_1 = __nccwpck_require__(3412);
+function getOrgTeams(octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const teams = yield octokit.rest.teams.list({
+            org: github_1.context.payload.organization.login,
+            per_page: 100
+        });
+        return teams;
+    });
+}
+function getOrgRepos(octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const repos = yield octokit.rest.repos.listForOrg({
+            org: github_1.context.payload.organization.login,
+            per_page: 100
+        });
+        return repos;
+    });
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const payload = JSON.stringify(github_1.context.payload, null, 2);
-            (0, core_1.debug)(`The event payload: ${payload}`);
-            const config = yield (0, loadConfig_1.loadConfig)('./assemble.yml');
+            const GH_TOKEN = (0, core_1.getInput)('token');
+            const octokit = (0, github_1.getOctokit)(GH_TOKEN);
+            const configPath = (0, core_1.getInput)('config');
+            const teams = yield getOrgTeams(octokit);
+            (0, core_1.debug)(`The org teams: ${JSON.stringify(teams, null, 2)}`);
+            const repos = yield getOrgRepos(octokit);
+            (0, core_1.debug)(`The org repos: ${JSON.stringify(repos, null, 2)}`);
+            const config = yield (0, fs_1.loadConfig)(configPath);
             (0, core_1.debug)(`The config: ${JSON.stringify(config, null, 2)}`);
         }
         catch (error) {
@@ -53,7 +76,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseYAML = exports.readFile = void 0;
+exports.loadConfig = exports.parseYAML = exports.readFile = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const js_yaml_1 = __nccwpck_require__(1917);
 const readFile = (path) => {
@@ -73,29 +96,8 @@ const parseYAML = (path) => __awaiter(void 0, void 0, void 0, function* () {
     return (0, js_yaml_1.load)(content);
 });
 exports.parseYAML = parseYAML;
-
-
-/***/ }),
-
-/***/ 8634:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.loadConfig = void 0;
-const fs_1 = __nccwpck_require__(3412);
 const loadConfig = (path) => __awaiter(void 0, void 0, void 0, function* () {
-    const config = yield (0, fs_1.parseYAML)(path);
+    const config = yield (0, exports.parseYAML)(path);
     return config;
 });
 exports.loadConfig = loadConfig;

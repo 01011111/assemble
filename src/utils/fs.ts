@@ -17,3 +17,8 @@ export const parseYAML = async (path: string): Promise<any> => {
   const content = await readFile(path)
   return load(content)
 }
+
+export const loadConfig = async (path: string): Promise<any> => {
+  const config = await parseYAML(path)
+  return config
+}

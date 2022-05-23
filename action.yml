@@ -4,3 +4,11 @@ author: Yorick <yorick@ctrlalt.dev>
 runs:
   using: 'node16'
   main: 'dist/index.js'
+inputs:
+  token:
+    description: GitHub Token to interact with GitHub API
+    required: true
+  config:
+    description: Configuration file
+    required: true
+    default: './assemble.yml'
