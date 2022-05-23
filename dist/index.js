@@ -57,12 +57,50 @@ function checkTeams(octokit, current, target) {
     return __awaiter(this, void 0, void 0, function* () {
         for (const team of target) {
             const slug = formatTeamName(team);
-            if (!current[slug]) {
+            if (current[slug]) {
+                (0, core_1.debug)(`Team ${team} already exists`);
+            }
+            else {
                 (0, core_1.debug)(`Creating team ${team}`);
                 yield octokit.rest.teams.create({
                     org: github_1.context.payload.organization.login,
-                    name: team
+                    name: team,
+                    privacy: 'closed'
                 });
+            }
+        }
+    });
+}
+function applyRepoAccess(octokit, repo, teams) {
+    return __awaiter(this, void 0, void 0, function* () {
+        (0, core_1.debug)(`Applying repo access for ${repo}`);
+        for (const team of teams) {
+            const { team: name, permission } = team;
+            (0, core_1.debug)(`Applying ${permission} access for ${repo} to ${name}`);
+            const slug = formatTeamName(name);
+            const { data, status } = yield octokit.rest.teams.addOrUpdateRepoPermissionsInOrg({
+                team_slug: slug,
+                org: github_1.context.payload.organization.login,
+                owner: github_1.context.payload.organization.login,
+                repo,
+                permission
+            });
+            if (status !== 200) {
+                throw Error(`Failed to add repo to team: ${status}\n${data}`);
+            }
+        }
+    });
+}
+function checkRepoAccess(octokit, config) {
+    return __awaiter(this, void 0, void 0, function* () {
+        for (const repoKey in config) {
+            if (repoKey === '*') {
+                const orgRepos = yield getOrgRepos(octokit);
+                const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config[repoKey]));
+                yield Promise.all(promises);
+            }
+            else {
+                yield applyRepoAccess(octokit, repoKey, config[repoKey]);
             }
         }
     });
@@ -80,6 +118,7 @@ function run() {
             const config = yield (0, fs_1.loadConfig)(configPath);
             (0, core_1.debug)(`The config: ${JSON.stringify(config, null, 2)}`);
             yield checkTeams(octokit, formatTeams(teams), config.teams);
+            yield checkRepoAccess(octokit, config.repos);
         }
         catch (error) {
             if (error instanceof Error)

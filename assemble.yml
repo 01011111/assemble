@@ -9,14 +9,14 @@ teams:
 access:
   '*':
     - team: Admin
-      role: admin
+      permission: admin
     - team: QA
-      role: read
+      permission: pull
 
   assemble:
     - team: BackEnd
-      role: maintain
+      permission: maintain
     - team: DevOps
-      role: write
+      permission: push
     - team: QA
-      role: triage
+      permission: triage
