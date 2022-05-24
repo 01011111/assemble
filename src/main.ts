@@ -27,9 +27,7 @@ async function checkTeams (octokit: any, org: Organization, current: { [key: str
       for (const parent in team) {
         const parentTeam = await checkTeam(octokit, org, current, parent, parentId)
 
-        for (const subteam of team[parent]) {
-          await checkTeams(octokit, org, current, subteam, parentTeam.id)
-        }
+        await checkTeams(octokit, org, current, team[parent], parentTeam.id)
       }
     } else {
       throw new Error(`Invalid team configuration: ${JSON.stringify(team)}`)

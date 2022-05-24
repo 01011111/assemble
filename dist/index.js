@@ -44,9 +44,7 @@ function checkTeams(octokit, org, current, target, parentId = null) {
             else if (typeof team === 'object' && !Array.isArray(team) && team !== null) {
                 for (const parent in team) {
                     const parentTeam = yield checkTeam(octokit, org, current, parent, parentId);
-                    for (const subteam of team[parent]) {
-                        yield checkTeams(octokit, org, current, subteam, parentTeam.id);
-                    }
+                    yield checkTeams(octokit, org, current, team[parent], parentTeam.id);
                 }
             }
             else {

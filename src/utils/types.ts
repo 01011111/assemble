@@ -1,4 +1,4 @@
-export type ConfigTeams = string | { [key: string]: string[] }[]
+export type ConfigTeams = string | { [key: string]: string[] | any }[]
 
 export interface CreateTeamInput {
   org: string
