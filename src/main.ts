@@ -27,7 +27,7 @@ async function checkTeams (octokit: any, current: { [key: string]: Team }, targe
       for (const parent in team) {
         const parentTeam = await checkTeam(octokit, current, context.payload.organization.login, parent, null)
 
-        for (const subteam in team[parent]) {
+        for (const subteam of team[parent]) {
           await checkTeam(octokit, current, context.payload.organization.login, subteam, parentTeam.id)
         }
       }
