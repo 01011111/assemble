@@ -26,8 +26,7 @@ function checkTeam(octokit, current, org, team, parentId = null) {
         const slug = (0, format_1.formatTeamName)(team);
         if (current[slug]) {
             (0, core_1.debug)(`Team ${team} already exists`);
-            const existingTeam = yield (0, github_2.getTeam)(octokit, org, slug);
-            return existingTeam;
+            return current[slug];
         }
         else {
             (0, core_1.debug)(`Creating team ${team}`);
@@ -42,13 +41,16 @@ function checkTeams(octokit, current, target) {
             if (typeof team === 'string') {
                 yield checkTeam(octokit, current, github_1.context.payload.organization.login, team);
             }
-            else if (typeof team === 'object') {
+            else if (typeof team === 'object' && !Array.isArray(team) && team !== null) {
                 for (const parent in team) {
                     const parentTeam = yield checkTeam(octokit, current, github_1.context.payload.organization.login, parent, null);
                     for (const subteam in team[parent]) {
                         yield checkTeam(octokit, current, github_1.context.payload.organization.login, subteam, parentTeam.id);
                     }
                 }
+            }
+            else {
+                throw new Error(`Invalid team configuration: ${JSON.stringify(team)}`);
             }
         }
     });
@@ -188,21 +190,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.updateTeamAccess = exports.createTeam = exports.getOrgRepos = exports.getOrgTeams = exports.getTeam = void 0;
-function getTeam(octokit, org, slug) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { data: team } = yield octokit.teams.getByName({
-            org,
-            team_slug: slug
-        });
-        return {
-            slug,
-            name: team.name,
-            id: team.id
-        };
-    });
-}
-exports.getTeam = getTeam;
+exports.updateTeamAccess = exports.createTeam = exports.getOrgRepos = exports.getOrgTeams = void 0;
 function getOrgTeams(octokit, org) {
     return __awaiter(this, void 0, void 0, function* () {
         const { data, status } = yield octokit.rest.teams.list({
