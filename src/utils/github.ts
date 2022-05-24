@@ -27,7 +27,7 @@ export async function getOrgRepos (octokit: any, org: string): Promise<Repo[]> {
   return data
 }
 
-export async function createTeam (octokit: any, org: string, name: string, parentId: number | null): Promise<Team> {
+export async function createTeam (octokit: any, org: string, name: string, parentId: number | unknown): Promise<Team> {
   const { data, status } = await octokit.rest.teams.create({
     org,
     name,

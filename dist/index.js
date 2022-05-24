@@ -21,7 +21,7 @@ const github_1 = __nccwpck_require__(5438);
 const fs_1 = __nccwpck_require__(3412);
 const format_1 = __nccwpck_require__(1264);
 const github_2 = __nccwpck_require__(6863);
-function checkTeam(octokit, current, org, team, parentId = null) {
+function checkTeam(octokit, current, org, team, parentId = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
         const slug = (0, format_1.formatTeamName)(team);
         if (current[slug]) {
