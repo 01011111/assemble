@@ -2,16 +2,16 @@
 import { Team, Repo, Permission } from './types'
 
 export async function getTeam (octokit: any, org: string, slug: string): Promise<Team> {
-  const { data: team } = await octokit.teams.getByName({
+  const { data, status } = await octokit.teams.getByName({
     org,
     team_slug: slug
   })
 
-  return {
-    slug,
-    name: team.name,
-    id: team.id
+  if (status !== 200) {
+    throw Error(`Failed to get org team ${slug}: ${status}\n${data}`)
   }
+
+  return data
 }
 
 export async function getOrgTeams (octokit: any, org: string): Promise<Team[]> {
