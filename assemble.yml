@@ -6,8 +6,8 @@ teams:
   - QA
   - Mobile
   - Assemble:
-    - Dev
-    - QA
+    - ExtDev
+    - Assemble-QA
 
 access:
   '*':
@@ -23,7 +23,7 @@ access:
       permission: push
     - team: QA
       permission: triage
-    - team: Assemble-Dev
+    - team: ExtDev
       permission: push
     - team: Assemble-QA
       permission: triage

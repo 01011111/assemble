@@ -30,7 +30,7 @@ function checkTeam(octokit, current, org, team, parentId = null) {
         }
         else {
             (0, core_1.debug)(`Creating team ${team}`);
-            const newTeam = yield (0, github_2.createTeam)(octokit, org, slug, parentId);
+            const newTeam = yield (0, github_2.createTeam)(octokit, org, team, parentId);
             return newTeam;
         }
     });

@@ -14,7 +14,7 @@ async function checkTeam (octokit: any, current: { [key: string]: Team }, org: s
     return current[slug]
   } else {
     debug(`Creating team ${team}`)
-    const newTeam = await createTeam(octokit, org, slug, parentId)
+    const newTeam = await createTeam(octokit, org, team, parentId)
     return newTeam
   }
 }
