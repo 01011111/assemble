@@ -1,6 +1,9 @@
-name: Assemble!
+name: Team, Assemble!
 description: Provision Teams and Grant Access to Repos
 author: Yorick <yorick@ctrlalt.dev>
+branding:
+  icon: briefcase
+  color: purple
 runs:
   using: 'node16'
   main: 'dist/index.js'
