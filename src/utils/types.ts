@@ -7,6 +7,11 @@ export interface CreateTeamInput {
   parent_team_id?: number
 }
 
+export interface Organization {
+  login: string
+  id: number
+}
+
 export interface Team {
   slug: string
   name: string

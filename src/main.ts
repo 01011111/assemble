@@ -2,11 +2,11 @@ import { debug, setFailed, getInput } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 
 import { loadConfig } from './utils/fs'
-import { ConfigTeams, Team, TeamAccess } from './utils/types'
+import { ConfigTeams, Organization, Team, TeamAccess } from './utils/types'
 import { formatTeams, formatTeamName } from './utils/format'
 import { getOrgTeams, getOrgRepos, createTeam, updateTeamAccess } from './utils/github'
 
-async function checkTeam (octokit: any, current: { [key: string]: Team }, org: string, team: string, parentId: number | null = null): Promise<Team> {
+async function checkTeam (octokit: any, org: Organization, current: { [key: string]: Team }, team: string, parentId: number | null = null): Promise<Team> {
   const slug = formatTeamName(team)
 
   if (current[slug]) {
@@ -19,16 +19,16 @@ async function checkTeam (octokit: any, current: { [key: string]: Team }, org: s
   }
 }
 
-async function checkTeams (octokit: any, current: { [key: string]: Team }, target: ConfigTeams): Promise<void> {
+async function checkTeams (octokit: any, org: Organization, current: { [key: string]: Team }, target: ConfigTeams, parentId: number|null = null): Promise<void> {
   for (const team of target) {
     if (typeof team === 'string') {
-      await checkTeam(octokit, current, context.payload.organization.login, team)
+      await checkTeam(octokit, org, current, team, parentId)
     } else if (typeof team === 'object' && !Array.isArray(team) && team !== null) {
       for (const parent in team) {
-        const parentTeam = await checkTeam(octokit, current, context.payload.organization.login, parent, null)
+        const parentTeam = await checkTeam(octokit, org, current, parent, parentId)
 
         for (const subteam of team[parent]) {
-          await checkTeam(octokit, current, context.payload.organization.login, subteam, parentTeam.id)
+          await checkTeams(octokit, org, current, subteam, parentTeam.id)
         }
       }
     } else {
@@ -37,24 +37,24 @@ async function checkTeams (octokit: any, current: { [key: string]: Team }, targe
   }
 }
 
-async function applyRepoAccess (octokit: any, repo: string, teams: TeamAccess[]): Promise<void> {
+async function applyRepoAccess (octokit: any, org: Organization, repo: string, teams: TeamAccess[]): Promise<void> {
   debug(`Applying repo access for ${repo}`)
   for (const team of teams) {
     const { team: name, permission } = team
     debug(`Applying ${permission} access for ${repo} to ${name}`)
     const slug = formatTeamName(name)
 
-    await updateTeamAccess(octokit, slug, context.payload.organization.login, repo, permission)
+    await updateTeamAccess(octokit, slug, org, repo, permission)
   }
 }
 
-async function checkRepoAccess (octokit: any, config: { [key: string]: TeamAccess[] }): Promise<void> {
+async function checkRepoAccess (octokit: any, org: Organization, config: { [key: string]: TeamAccess[] }): Promise<void> {
   const repoList = Object.keys(config)
 
   if (repoList.indexOf('*') > -1) {
-    const orgRepos = await getOrgRepos(octokit, context.payload.organization.login)
+    const orgRepos = await getOrgRepos(octokit, org)
 
-    const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config['*']))
+    const promises = orgRepos.map(repo => applyRepoAccess(octokit, org, repo.name, config['*']))
     await Promise.all(promises)
   }
 
@@ -62,7 +62,7 @@ async function checkRepoAccess (octokit: any, config: { [key: string]: TeamAcces
     if (repoKey === '*') {
       continue
     } else {
-      await applyRepoAccess(octokit, repoKey, config[repoKey])
+      await applyRepoAccess(octokit, org, repoKey, config[repoKey])
     }
   }
 }
@@ -74,15 +74,22 @@ async function run (): Promise<void> {
 
     const octokit = getOctokit(GH_TOKEN)
 
-    const orgTeams = await getOrgTeams(octokit, context.payload.organization.login)
+    const org: Organization = context.payload?.organization
+
+    if (!org) {
+      debug(`No organization found: ${JSON.stringify(context.payload, null, 2)}`)
+      throw Error('Missing organization in the context payload')
+    }
+
+    const orgTeams = await getOrgTeams(octokit, org)
     debug(`The org teams: ${JSON.stringify(orgTeams, null, 2)}`)
 
     const { teams = [], access = {} }: { teams: ConfigTeams, access: { [key: string]: TeamAccess[]; } } = await loadConfig(configPath)
     debug(`The config: ${JSON.stringify({ teams, access }, null, 2)}`)
 
-    await checkTeams(octokit, formatTeams(orgTeams), teams)
+    await checkTeams(octokit, org, formatTeams(orgTeams), teams)
 
-    await checkRepoAccess(octokit, access)
+    await checkRepoAccess(octokit, org, access)
   } catch (error) {
     if (error instanceof Error) setFailed(error.message)
   }

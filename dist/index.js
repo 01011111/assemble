@@ -21,7 +21,7 @@ const github_1 = __nccwpck_require__(5438);
 const fs_1 = __nccwpck_require__(3412);
 const format_1 = __nccwpck_require__(1264);
 const github_2 = __nccwpck_require__(6863);
-function checkTeam(octokit, current, org, team, parentId = null) {
+function checkTeam(octokit, org, current, team, parentId = null) {
     return __awaiter(this, void 0, void 0, function* () {
         const slug = (0, format_1.formatTeamName)(team);
         if (current[slug]) {
@@ -35,17 +35,17 @@ function checkTeam(octokit, current, org, team, parentId = null) {
         }
     });
 }
-function checkTeams(octokit, current, target) {
+function checkTeams(octokit, org, current, target, parentId = null) {
     return __awaiter(this, void 0, void 0, function* () {
         for (const team of target) {
             if (typeof team === 'string') {
-                yield checkTeam(octokit, current, github_1.context.payload.organization.login, team);
+                yield checkTeam(octokit, org, current, team, parentId);
             }
             else if (typeof team === 'object' && !Array.isArray(team) && team !== null) {
                 for (const parent in team) {
-                    const parentTeam = yield checkTeam(octokit, current, github_1.context.payload.organization.login, parent, null);
+                    const parentTeam = yield checkTeam(octokit, org, current, parent, parentId);
                     for (const subteam of team[parent]) {
-                        yield checkTeam(octokit, current, github_1.context.payload.organization.login, subteam, parentTeam.id);
+                        yield checkTeams(octokit, org, current, subteam, parentTeam.id);
                     }
                 }
             }
@@ -55,23 +55,23 @@ function checkTeams(octokit, current, target) {
         }
     });
 }
-function applyRepoAccess(octokit, repo, teams) {
+function applyRepoAccess(octokit, org, repo, teams) {
     return __awaiter(this, void 0, void 0, function* () {
         (0, core_1.debug)(`Applying repo access for ${repo}`);
         for (const team of teams) {
             const { team: name, permission } = team;
             (0, core_1.debug)(`Applying ${permission} access for ${repo} to ${name}`);
             const slug = (0, format_1.formatTeamName)(name);
-            yield (0, github_2.updateTeamAccess)(octokit, slug, github_1.context.payload.organization.login, repo, permission);
+            yield (0, github_2.updateTeamAccess)(octokit, slug, org, repo, permission);
         }
     });
 }
-function checkRepoAccess(octokit, config) {
+function checkRepoAccess(octokit, org, config) {
     return __awaiter(this, void 0, void 0, function* () {
         const repoList = Object.keys(config);
         if (repoList.indexOf('*') > -1) {
-            const orgRepos = yield (0, github_2.getOrgRepos)(octokit, github_1.context.payload.organization.login);
-            const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config['*']));
+            const orgRepos = yield (0, github_2.getOrgRepos)(octokit, org);
+            const promises = orgRepos.map(repo => applyRepoAccess(octokit, org, repo.name, config['*']));
             yield Promise.all(promises);
         }
         for (const repoKey in config) {
@@ -79,23 +79,29 @@ function checkRepoAccess(octokit, config) {
                 continue;
             }
             else {
-                yield applyRepoAccess(octokit, repoKey, config[repoKey]);
+                yield applyRepoAccess(octokit, org, repoKey, config[repoKey]);
             }
         }
     });
 }
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const GH_TOKEN = (0, core_1.getInput)('token');
             const configPath = (0, core_1.getInput)('config');
             const octokit = (0, github_1.getOctokit)(GH_TOKEN);
-            const orgTeams = yield (0, github_2.getOrgTeams)(octokit, github_1.context.payload.organization.login);
+            const org = (_a = github_1.context.payload) === null || _a === void 0 ? void 0 : _a.organization;
+            if (!org) {
+                (0, core_1.debug)(`No organization found: ${JSON.stringify(github_1.context.payload, null, 2)}`);
+                throw Error('Missing organization in the context payload');
+            }
+            const orgTeams = yield (0, github_2.getOrgTeams)(octokit, org);
             (0, core_1.debug)(`The org teams: ${JSON.stringify(orgTeams, null, 2)}`);
             const { teams = [], access = {} } = yield (0, fs_1.loadConfig)(configPath);
             (0, core_1.debug)(`The config: ${JSON.stringify({ teams, access }, null, 2)}`);
-            yield checkTeams(octokit, (0, format_1.formatTeams)(orgTeams), teams);
-            yield checkRepoAccess(octokit, access);
+            yield checkTeams(octokit, org, (0, format_1.formatTeams)(orgTeams), teams);
+            yield checkRepoAccess(octokit, org, access);
         }
         catch (error) {
             if (error instanceof Error)
@@ -194,7 +200,7 @@ exports.updateTeamAccess = exports.createTeam = exports.getOrgRepos = exports.ge
 function getOrgTeams(octokit, org) {
     return __awaiter(this, void 0, void 0, function* () {
         const { data, status } = yield octokit.rest.teams.list({
-            org,
+            org: org.login,
             per_page: 100
         });
         if (status !== 200) {
@@ -207,7 +213,7 @@ exports.getOrgTeams = getOrgTeams;
 function getOrgRepos(octokit, org) {
     return __awaiter(this, void 0, void 0, function* () {
         const { data, status } = yield octokit.rest.repos.listForOrg({
-            org,
+            org: org.login,
             per_page: 100
         });
         if (status !== 200) {
@@ -220,7 +226,7 @@ exports.getOrgRepos = getOrgRepos;
 function createTeam(octokit, org, name, parentId) {
     return __awaiter(this, void 0, void 0, function* () {
         const opts = {
-            org,
+            org: org.login,
             name,
             privacy: 'closed'
         };
@@ -239,8 +245,8 @@ function updateTeamAccess(octokit, teamSlug, org, repo, permission) {
     return __awaiter(this, void 0, void 0, function* () {
         const { data, status } = yield octokit.rest.teams.addOrUpdateRepoPermissionsInOrg({
             team_slug: teamSlug,
-            org,
-            owner: org,
+            org: org.login,
+            owner: org.login,
             repo,
             permission
         });
