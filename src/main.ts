@@ -4,15 +4,14 @@ import { context, getOctokit } from '@actions/github'
 import { loadConfig } from './utils/fs'
 import { ConfigTeams, Team, TeamAccess } from './utils/types'
 import { formatTeams, formatTeamName } from './utils/format'
-import { getOrgTeams, getOrgRepos, getTeam, createTeam, updateTeamAccess } from './utils/github'
+import { getOrgTeams, getOrgRepos, createTeam, updateTeamAccess } from './utils/github'
 
 async function checkTeam (octokit: any, current: { [key: string]: Team }, org: string, team: string, parentId: number | null = null): Promise<Team> {
   const slug = formatTeamName(team)
 
   if (current[slug]) {
     debug(`Team ${team} already exists`)
-    const existingTeam = await getTeam(octokit, org, slug)
-    return existingTeam
+    return current[slug]
   } else {
     debug(`Creating team ${team}`)
     const newTeam = await createTeam(octokit, org, slug, parentId)
@@ -24,7 +23,7 @@ async function checkTeams (octokit: any, current: { [key: string]: Team }, targe
   for (const team of target) {
     if (typeof team === 'string') {
       await checkTeam(octokit, current, context.payload.organization.login, team)
-    } else if (typeof team === 'object') {
+    } else if (typeof team === 'object' && !Array.isArray(team) && team !== null) {
       for (const parent in team) {
         const parentTeam = await checkTeam(octokit, current, context.payload.organization.login, parent, null)
 
@@ -32,6 +31,8 @@ async function checkTeams (octokit: any, current: { [key: string]: Team }, targe
           await checkTeam(octokit, current, context.payload.organization.login, subteam, parentTeam.id)
         }
       }
+    } else {
+      throw new Error(`Invalid team configuration: ${JSON.stringify(team)}`)
     }
   }
 }
