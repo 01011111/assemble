@@ -1,5 +1,12 @@
 export type ConfigTeams = string | { [key: string]: string[] }[]
 
+export interface CreateTeamInput {
+  org: string
+  name: string
+  privacy: 'closed' | 'secret'
+  parent_team_id?: number
+}
+
 export interface Team {
   slug: string
   name: string

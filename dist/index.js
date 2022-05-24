@@ -21,7 +21,7 @@ const github_1 = __nccwpck_require__(5438);
 const fs_1 = __nccwpck_require__(3412);
 const format_1 = __nccwpck_require__(1264);
 const github_2 = __nccwpck_require__(6863);
-function checkTeam(octokit, current, org, team, parentId = undefined) {
+function checkTeam(octokit, current, org, team, parentId = null) {
     return __awaiter(this, void 0, void 0, function* () {
         const slug = (0, format_1.formatTeamName)(team);
         if (current[slug]) {
@@ -219,12 +219,15 @@ function getOrgRepos(octokit, org) {
 exports.getOrgRepos = getOrgRepos;
 function createTeam(octokit, org, name, parentId) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data, status } = yield octokit.rest.teams.create({
+        const opts = {
             org,
             name,
-            privacy: 'closed',
-            parent_team_id: parentId
-        });
+            privacy: 'closed'
+        };
+        if (parentId) {
+            opts.parent_team_id = parentId;
+        }
+        const { data, status } = yield octokit.rest.teams.create(opts);
         if (status !== 201) {
             throw Error(`Failed to create team ${name}: ${status}\n${data}`);
         }

@@ -6,7 +6,7 @@ import { ConfigTeams, Team, TeamAccess } from './utils/types'
 import { formatTeams, formatTeamName } from './utils/format'
 import { getOrgTeams, getOrgRepos, createTeam, updateTeamAccess } from './utils/github'
 
-async function checkTeam (octokit: any, current: { [key: string]: Team }, org: string, team: string, parentId: number | unknown = undefined): Promise<Team> {
+async function checkTeam (octokit: any, current: { [key: string]: Team }, org: string, team: string, parentId: number | null = null): Promise<Team> {
   const slug = formatTeamName(team)
 
   if (current[slug]) {

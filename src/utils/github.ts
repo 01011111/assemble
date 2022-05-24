@@ -1,5 +1,5 @@
 
-import { Team, Repo, Permission } from './types'
+import { Team, Repo, Permission, CreateTeamInput } from './types'
 
 export async function getOrgTeams (octokit: any, org: string): Promise<Team[]> {
   const { data, status } = await octokit.rest.teams.list({
@@ -27,13 +27,18 @@ export async function getOrgRepos (octokit: any, org: string): Promise<Repo[]> {
   return data
 }
 
-export async function createTeam (octokit: any, org: string, name: string, parentId: number | unknown): Promise<Team> {
-  const { data, status } = await octokit.rest.teams.create({
+export async function createTeam (octokit: any, org: string, name: string, parentId: number | null): Promise<Team> {
+  const opts: CreateTeamInput = {
     org,
     name,
-    privacy: 'closed',
-    parent_team_id: parentId
-  })
+    privacy: 'closed'
+  }
+
+  if (parentId) {
+    opts.parent_team_id = parentId
+  }
+
+  const { data, status } = await octokit.rest.teams.create(opts)
 
   if (status !== 201) {
     throw Error(`Failed to create team ${name}: ${status}\n${data}`)
