@@ -1,5 +1,5 @@
-name: Assemble
-description: TBD
+name: Assemble!
+description: Provision Teams and Grant Access to Repos
 author: Yorick <yorick@ctrlalt.dev>
 runs:
   using: 'node16'

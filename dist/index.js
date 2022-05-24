@@ -19,44 +19,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
 const fs_1 = __nccwpck_require__(3412);
-function getOrgTeams(octokit) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { data, status } = yield octokit.rest.teams.list({
-            org: github_1.context.payload.organization.login,
-            per_page: 100
-        });
-        if (status !== 200) {
-            throw Error(`Failed to get org teams: ${status}\n${data}`);
-        }
-        return data;
-    });
-}
-function getOrgRepos(octokit) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { data, status } = yield octokit.rest.repos.listForOrg({
-            org: github_1.context.payload.organization.login,
-            per_page: 100
-        });
-        if (status !== 200) {
-            throw Error(`Failed to get org repos: ${status}\n${data}`);
-        }
-        return data;
-    });
-}
-function formatTeams(raw) {
-    const teams = {};
-    for (const team of raw) {
-        teams[team.slug] = Object.assign({}, team);
-    }
-    return teams;
-}
-function formatTeamName(name) {
-    return name.toLocaleLowerCase().replace(/\s+/g, '-');
-}
+const format_1 = __nccwpck_require__(1264);
+const github_2 = __nccwpck_require__(6863);
 function checkTeams(octokit, current, target) {
     return __awaiter(this, void 0, void 0, function* () {
         for (const team of target) {
-            const slug = formatTeamName(team);
+            const slug = (0, format_1.formatTeamName)(team);
             if (current[slug]) {
                 (0, core_1.debug)(`Team ${team} already exists`);
             }
@@ -77,17 +45,8 @@ function applyRepoAccess(octokit, repo, teams) {
         for (const team of teams) {
             const { team: name, permission } = team;
             (0, core_1.debug)(`Applying ${permission} access for ${repo} to ${name}`);
-            const slug = formatTeamName(name);
-            const { data, status } = yield octokit.rest.teams.addOrUpdateRepoPermissionsInOrg({
-                team_slug: slug,
-                org: github_1.context.payload.organization.login,
-                owner: github_1.context.payload.organization.login,
-                repo,
-                permission
-            });
-            if (status !== 204) {
-                throw Error(`Failed to add repo to team: ${status}\n${data}`);
-            }
+            const slug = (0, format_1.formatTeamName)(name);
+            yield (0, github_2.updateTeamAccess)(octokit, slug, github_1.context.payload.organization.login, repo, permission);
         }
     });
 }
@@ -95,7 +54,7 @@ function checkRepoAccess(octokit, config) {
     return __awaiter(this, void 0, void 0, function* () {
         const repoList = Object.keys(config);
         if (repoList.indexOf('*') > -1) {
-            const orgRepos = yield getOrgRepos(octokit);
+            const orgRepos = yield (0, github_2.getOrgRepos)(octokit);
             const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config['*']));
             yield Promise.all(promises);
         }
@@ -115,12 +74,12 @@ function run() {
             const GH_TOKEN = (0, core_1.getInput)('token');
             const configPath = (0, core_1.getInput)('config');
             const octokit = (0, github_1.getOctokit)(GH_TOKEN);
-            const teams = yield getOrgTeams(octokit);
-            (0, core_1.debug)(`The org teams: ${JSON.stringify(teams, null, 2)}`);
-            const config = yield (0, fs_1.loadConfig)(configPath);
-            (0, core_1.debug)(`The config: ${JSON.stringify(config, null, 2)}`);
-            yield checkTeams(octokit, formatTeams(teams), config.teams);
-            yield checkRepoAccess(octokit, config.access);
+            const orgTeams = yield (0, github_2.getOrgTeams)(octokit);
+            (0, core_1.debug)(`The org teams: ${JSON.stringify(orgTeams, null, 2)}`);
+            const { teams = [], access = {} } = yield (0, fs_1.loadConfig)(configPath);
+            (0, core_1.debug)(`The config: ${JSON.stringify({ teams, access }, null, 2)}`);
+            yield checkTeams(octokit, (0, format_1.formatTeams)(orgTeams), teams);
+            yield checkRepoAccess(octokit, access);
         }
         catch (error) {
             if (error instanceof Error)
@@ -129,6 +88,29 @@ function run() {
     });
 }
 run();
+
+
+/***/ }),
+
+/***/ 1264:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.formatTeamName = exports.formatTeams = void 0;
+function formatTeams(raw) {
+    const teams = {};
+    for (const team of raw) {
+        teams[team.slug] = Object.assign({}, team);
+    }
+    return teams;
+}
+exports.formatTeams = formatTeams;
+function formatTeamName(name) {
+    return name.toLocaleLowerCase().replace(/\s+/g, '-');
+}
+exports.formatTeamName = formatTeamName;
 
 
 /***/ }),
@@ -173,6 +155,68 @@ const loadConfig = (path) => __awaiter(void 0, void 0, void 0, function* () {
     return config;
 });
 exports.loadConfig = loadConfig;
+
+
+/***/ }),
+
+/***/ 6863:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.updateTeamAccess = exports.getOrgRepos = exports.getOrgTeams = void 0;
+const github_1 = __nccwpck_require__(5438);
+function getOrgTeams(octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { data, status } = yield octokit.rest.teams.list({
+            org: github_1.context.payload.organization.login,
+            per_page: 100
+        });
+        if (status !== 200) {
+            throw Error(`Failed to get org teams: ${status}\n${data}`);
+        }
+        return data;
+    });
+}
+exports.getOrgTeams = getOrgTeams;
+function getOrgRepos(octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { data, status } = yield octokit.rest.repos.listForOrg({
+            org: github_1.context.payload.organization.login,
+            per_page: 100
+        });
+        if (status !== 200) {
+            throw Error(`Failed to get org repos: ${status}\n${data}`);
+        }
+        return data;
+    });
+}
+exports.getOrgRepos = getOrgRepos;
+function updateTeamAccess(octokit, teamSlug, org, repo, permission) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { data, status } = yield octokit.rest.teams.addOrUpdateRepoPermissionsInOrg({
+            team_slug: teamSlug,
+            org,
+            owner: org,
+            repo,
+            permission
+        });
+        if (status !== 204) {
+            throw Error(`Failed to add repo ${repo} to team ${teamSlug}: ${status}\n${data}`);
+        }
+    });
+}
+exports.updateTeamAccess = updateTeamAccess;
 
 
 /***/ }),
