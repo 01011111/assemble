@@ -5,6 +5,9 @@ teams:
   - FronEnd
   - QA
   - Mobile
+  - Assemble:
+    - Dev
+    - QA
 
 access:
   '*':
@@ -19,4 +22,8 @@ access:
     - team: DevOps
       permission: push
     - team: QA
+      permission: triage
+    - team: Assemble-Dev
+      permission: push
+    - team: Assemble-QA
       permission: triage

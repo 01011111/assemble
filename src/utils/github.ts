@@ -1,11 +1,22 @@
 
-import { context } from '@actions/github'
-
 import { Team, Repo, Permission } from './types'
 
-export async function getOrgTeams (octokit: any): Promise<Team[]> {
+export async function getTeam (octokit: any, org: string, slug: string): Promise<Team> {
+  const { data: team } = await octokit.teams.getByName({
+    org,
+    team_slug: slug
+  })
+
+  return {
+    slug,
+    name: team.name,
+    id: team.id
+  }
+}
+
+export async function getOrgTeams (octokit: any, org: string): Promise<Team[]> {
   const { data, status } = await octokit.rest.teams.list({
-    org: context.payload.organization.login,
+    org,
     per_page: 100
   })
 
@@ -16,14 +27,29 @@ export async function getOrgTeams (octokit: any): Promise<Team[]> {
   return data
 }
 
-export async function getOrgRepos (octokit: any): Promise<Repo[]> {
+export async function getOrgRepos (octokit: any, org: string): Promise<Repo[]> {
   const { data, status } = await octokit.rest.repos.listForOrg({
-    org: context.payload.organization.login,
+    org,
     per_page: 100
   })
 
   if (status !== 200) {
     throw Error(`Failed to get org repos: ${status}\n${data}`)
+  }
+
+  return data
+}
+
+export async function createTeam (octokit: any, org: string, name: string, parentId: number | null): Promise<Team> {
+  const { data, status } = await octokit.rest.teams.create({
+    org,
+    name,
+    privacy: 'closed',
+    parent_team_id: parentId
+  })
+
+  if (status !== 201) {
+    throw Error(`Failed to create team ${name}: ${status}\n${data}`)
   }
 
   return data

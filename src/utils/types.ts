@@ -1,3 +1,5 @@
+export type ConfigTeams = string | { [key: string]: string[] }[]
+
 export interface Team {
   slug: string
   name: string

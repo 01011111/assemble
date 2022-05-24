@@ -2,23 +2,36 @@ import { debug, setFailed, getInput } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 
 import { loadConfig } from './utils/fs'
-import { Team, TeamAccess } from './utils/types'
+import { ConfigTeams, Team, TeamAccess } from './utils/types'
 import { formatTeams, formatTeamName } from './utils/format'
-import { getOrgTeams, getOrgRepos, updateTeamAccess } from './utils/github'
+import { getOrgTeams, getOrgRepos, getTeam, createTeam, updateTeamAccess } from './utils/github'
 
-async function checkTeams (octokit: any, current: { [key: string]: Team }, target: string[]): Promise<void> {
+async function checkTeam (octokit: any, current: { [key: string]: Team }, org: string, team: string, parentId: number | null = null): Promise<Team> {
+  const slug = formatTeamName(team)
+
+  if (current[slug]) {
+    debug(`Team ${team} already exists`)
+    const existingTeam = await getTeam(octokit, org, slug)
+    return existingTeam
+  } else {
+    debug(`Creating team ${team}`)
+    const newTeam = await createTeam(octokit, org, slug, parentId)
+    return newTeam
+  }
+}
+
+async function checkTeams (octokit: any, current: { [key: string]: Team }, target: ConfigTeams): Promise<void> {
   for (const team of target) {
-    const slug = formatTeamName(team)
+    if (typeof team === 'string') {
+      await checkTeam(octokit, current, context.payload.organization.login, team)
+    } else if (typeof team === 'object') {
+      for (const parent in team) {
+        const parentTeam = await checkTeam(octokit, current, context.payload.organization.login, parent, null)
 
-    if (current[slug]) {
-      debug(`Team ${team} already exists`)
-    } else {
-      debug(`Creating team ${team}`)
-      await octokit.rest.teams.create({
-        org: context.payload.organization.login,
-        name: team,
-        privacy: 'closed'
-      })
+        for (const subteam in team[parent]) {
+          await checkTeam(octokit, current, context.payload.organization.login, subteam, parentTeam.id)
+        }
+      }
     }
   }
 }
@@ -38,7 +51,7 @@ async function checkRepoAccess (octokit: any, config: { [key: string]: TeamAcces
   const repoList = Object.keys(config)
 
   if (repoList.indexOf('*') > -1) {
-    const orgRepos = await getOrgRepos(octokit)
+    const orgRepos = await getOrgRepos(octokit, context.payload.organization.login)
 
     const promises = orgRepos.map(repo => applyRepoAccess(octokit, repo.name, config['*']))
     await Promise.all(promises)
@@ -60,10 +73,10 @@ async function run (): Promise<void> {
 
     const octokit = getOctokit(GH_TOKEN)
 
-    const orgTeams = await getOrgTeams(octokit)
+    const orgTeams = await getOrgTeams(octokit, context.payload.organization.login)
     debug(`The org teams: ${JSON.stringify(orgTeams, null, 2)}`)
 
-    const { teams = [], access = {} }: { teams: string[], access: { [key: string]: TeamAccess[]; } } = await loadConfig(configPath)
+    const { teams = [], access = {} }: { teams: ConfigTeams, access: { [key: string]: TeamAccess[]; } } = await loadConfig(configPath)
     debug(`The config: ${JSON.stringify({ teams, access }, null, 2)}`)
 
     await checkTeams(octokit, formatTeams(orgTeams), teams)
