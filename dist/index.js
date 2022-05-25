@@ -89,7 +89,7 @@ function run() {
             const GH_TOKEN = (0, core_1.getInput)('token');
             const configPath = (0, core_1.getInput)('config');
             const octokit = (0, github_1.getOctokit)(GH_TOKEN);
-            const org = (_a = github_1.context.payload) === null || _a === void 0 ? void 0 : _a.organization;
+            const org = (_a = github_1.context.repo) === null || _a === void 0 ? void 0 : _a.owner;
             if (!org) {
                 (0, core_1.debug)(`No organization found: ${JSON.stringify(github_1.context.payload, null, 2)}`);
                 throw Error('Missing organization in the context payload');
@@ -198,7 +198,7 @@ exports.updateTeamAccess = exports.createTeam = exports.getOrgRepos = exports.ge
 function getOrgTeams(octokit, org) {
     return __awaiter(this, void 0, void 0, function* () {
         const { data, status } = yield octokit.rest.teams.list({
-            org: org.login,
+            org,
             per_page: 100
         });
         if (status !== 200) {
@@ -211,7 +211,7 @@ exports.getOrgTeams = getOrgTeams;
 function getOrgRepos(octokit, org) {
     return __awaiter(this, void 0, void 0, function* () {
         const { data, status } = yield octokit.rest.repos.listForOrg({
-            org: org.login,
+            org,
             per_page: 100
         });
         if (status !== 200) {
@@ -224,7 +224,7 @@ exports.getOrgRepos = getOrgRepos;
 function createTeam(octokit, org, name, parentId) {
     return __awaiter(this, void 0, void 0, function* () {
         const opts = {
-            org: org.login,
+            org,
             name,
             privacy: 'closed'
         };
@@ -243,8 +243,8 @@ function updateTeamAccess(octokit, teamSlug, org, repo, permission) {
     return __awaiter(this, void 0, void 0, function* () {
         const { data, status } = yield octokit.rest.teams.addOrUpdateRepoPermissionsInOrg({
             team_slug: teamSlug,
-            org: org.login,
-            owner: org.login,
+            org,
+            owner: org,
             repo,
             permission
         });

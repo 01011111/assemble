@@ -1,9 +1,9 @@
 
-import { Organization, Team, Repo, Permission, CreateTeamInput } from './types'
+import { Team, Repo, Permission, CreateTeamInput } from './types'
 
-export async function getOrgTeams (octokit: any, org: Organization): Promise<Team[]> {
+export async function getOrgTeams (octokit: any, org: string): Promise<Team[]> {
   const { data, status } = await octokit.rest.teams.list({
-    org: org.login,
+    org,
     per_page: 100
   })
 
@@ -14,9 +14,9 @@ export async function getOrgTeams (octokit: any, org: Organization): Promise<Tea
   return data
 }
 
-export async function getOrgRepos (octokit: any, org: Organization): Promise<Repo[]> {
+export async function getOrgRepos (octokit: any, org: string): Promise<Repo[]> {
   const { data, status } = await octokit.rest.repos.listForOrg({
-    org: org.login,
+    org,
     per_page: 100
   })
 
@@ -27,9 +27,9 @@ export async function getOrgRepos (octokit: any, org: Organization): Promise<Rep
   return data
 }
 
-export async function createTeam (octokit: any, org: Organization, name: string, parentId: number | null): Promise<Team> {
+export async function createTeam (octokit: any, org: string, name: string, parentId: number | null): Promise<Team> {
   const opts: CreateTeamInput = {
-    org: org.login,
+    org,
     name,
     privacy: 'closed'
   }
@@ -47,11 +47,11 @@ export async function createTeam (octokit: any, org: Organization, name: string,
   return data
 }
 
-export async function updateTeamAccess (octokit: any, teamSlug: string, org: Organization, repo: string, permission: Permission): Promise<void> {
+export async function updateTeamAccess (octokit: any, teamSlug: string, org: string, repo: string, permission: Permission): Promise<void> {
   const { data, status } = await octokit.rest.teams.addOrUpdateRepoPermissionsInOrg({
     team_slug: teamSlug,
-    org: org.login,
-    owner: org.login,
+    org,
+    owner: org,
     repo,
     permission
   })

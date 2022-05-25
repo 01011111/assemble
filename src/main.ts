@@ -2,11 +2,11 @@ import { debug, setFailed, getInput } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 
 import { loadConfig } from './utils/fs'
-import { ConfigTeams, Organization, Team, TeamAccess } from './utils/types'
+import { ConfigTeams, Team, TeamAccess } from './utils/types'
 import { formatTeams, formatTeamName } from './utils/format'
 import { getOrgTeams, getOrgRepos, createTeam, updateTeamAccess } from './utils/github'
 
-async function checkTeam (octokit: any, org: Organization, current: { [key: string]: Team }, team: string, parentId: number | null = null): Promise<Team> {
+async function checkTeam (octokit: any, org: string, current: { [key: string]: Team }, team: string, parentId: number | null = null): Promise<Team> {
   const slug = formatTeamName(team)
 
   if (current[slug]) {
@@ -19,7 +19,7 @@ async function checkTeam (octokit: any, org: Organization, current: { [key: stri
   }
 }
 
-async function checkTeams (octokit: any, org: Organization, current: { [key: string]: Team }, target: ConfigTeams, parentId: number|null = null): Promise<void> {
+async function checkTeams (octokit: any, org: string, current: { [key: string]: Team }, target: ConfigTeams, parentId: number|null = null): Promise<void> {
   for (const team of target) {
     if (typeof team === 'string') {
       await checkTeam(octokit, org, current, team, parentId)
@@ -35,7 +35,7 @@ async function checkTeams (octokit: any, org: Organization, current: { [key: str
   }
 }
 
-async function applyRepoAccess (octokit: any, org: Organization, repo: string, teams: TeamAccess[]): Promise<void> {
+async function applyRepoAccess (octokit: any, org: string, repo: string, teams: TeamAccess[]): Promise<void> {
   debug(`Applying repo access for ${repo}`)
   for (const team of teams) {
     const { team: name, permission } = team
@@ -46,7 +46,7 @@ async function applyRepoAccess (octokit: any, org: Organization, repo: string, t
   }
 }
 
-async function checkRepoAccess (octokit: any, org: Organization, config: { [key: string]: TeamAccess[] }): Promise<void> {
+async function checkRepoAccess (octokit: any, org: string, config: { [key: string]: TeamAccess[] }): Promise<void> {
   const repoList = Object.keys(config)
 
   if (repoList.indexOf('*') > -1) {
@@ -72,7 +72,7 @@ async function run (): Promise<void> {
 
     const octokit = getOctokit(GH_TOKEN)
 
-    const org: Organization = context.payload?.organization
+    const org: string = context.repo?.owner
 
     if (!org) {
       debug(`No organization found: ${JSON.stringify(context.payload, null, 2)}`)
