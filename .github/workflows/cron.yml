@@ -1,0 +1,15 @@
+name: CRON
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 13 * * *'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          token: ${{ secrets.ORG_TOKEN }}
