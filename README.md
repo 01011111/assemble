@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: 01011111/assemble@v1.1
+      - uses: 01011111/assemble@v1.2
         with:
           token: ${{ secrets.ORG_TOKEN }}
 
@@ -74,7 +74,7 @@ You can reference a different file for the configuration - but the content has t
 Just add an input in the workflow:
 
 ```yaml
-uses: 01011111/assemble@v1.1
+uses: 01011111/assemble@v1.2
   with:
     token: ${{ secrets.ORG_TOKEN }}
     config: './github_teams.yaml'
