@@ -88,6 +88,7 @@ function applyRepoAccess(octokit, org, repo, teams, schemas) {
                     (0, core_1.debug)(`Refs: ${JSON.stringify(refs, null, 2)}`);
                     for (const ref of refs) {
                         const refSchema = yield extractSchema(ref, schemas);
+                        (0, core_1.debug)(`Ref schema extracted: ${JSON.stringify(refSchema, null, 2)}`);
                         (0, core_1.info)(`Applying repo access for ${repo} with schema ${ref}`);
                         yield applyRepoAccess(octokit, org, repo, refSchema, schemas);
                     }

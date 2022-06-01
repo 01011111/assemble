@@ -71,6 +71,7 @@ async function applyRepoAccess (octokit: any, org: string, repo: string, teams: 
 
         for (const ref of refs) {
           const refSchema: TeamAccess[] = await extractSchema(ref, schemas)
+          debug(`Ref schema extracted: ${JSON.stringify(refSchema, null, 2)}`)
           info(`Applying repo access for ${repo} with schema ${ref}`)
           await applyRepoAccess(octokit, org, repo, refSchema, schemas)
         }
