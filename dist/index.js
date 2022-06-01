@@ -75,18 +75,19 @@ function applyRepoAccess(octokit, org, repo, teams, schemas) {
     return __awaiter(this, void 0, void 0, function* () {
         for (const team of teams) {
             const { team: name, permission, $refs } = team;
+            (0, core_1.debug)(JSON.stringify({ team, name, permission, $refs }, null, 2));
             if ($refs) {
+                const refs = [];
+                if (typeof $refs === 'string') {
+                    refs.push($refs);
+                }
                 if (Array.isArray($refs)) {
-                    for (const ref of $refs) {
+                    refs.push(...$refs);
+                    for (const ref of refs) {
                         const refSchema = yield extractSchema(ref, schemas);
                         (0, core_1.info)(`Applying repo access for ${repo} with schema ${ref}`);
                         yield applyRepoAccess(octokit, org, repo, refSchema, schemas);
                     }
-                }
-                else if (typeof $refs === 'string') {
-                    const refSchema = yield extractSchema($refs, schemas);
-                    (0, core_1.info)(`Applying repo access for ${repo} with schema ${$refs}`);
-                    yield applyRepoAccess(octokit, org, repo, refSchema, schemas);
                 }
                 else {
                     (0, core_1.error)(`Invalid schema reference: ${JSON.stringify($refs, null, 2)}`);

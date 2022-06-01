@@ -55,18 +55,22 @@ async function extractSchema (ref: string, schemas: TeamAccessList): Promise<Tea
 async function applyRepoAccess (octokit: any, org: string, repo: string, teams: TeamAccess[], schemas: TeamAccessList): Promise<void> {
   for (const team of teams) {
     const { team: name, permission, $refs } = team
+    debug(JSON.stringify({ team, name, permission, $refs }, null, 2))
 
     if ($refs) {
+      const refs = []
+
+      if (typeof $refs === 'string') {
+        refs.push($refs)
+      }
+
       if (Array.isArray($refs)) {
-        for (const ref of $refs) {
+        refs.push(...$refs)
+        for (const ref of refs) {
           const refSchema: TeamAccess[] = await extractSchema(ref, schemas)
           info(`Applying repo access for ${repo} with schema ${ref}`)
           await applyRepoAccess(octokit, org, repo, refSchema, schemas)
         }
-      } else if (typeof $refs === 'string') {
-        const refSchema: TeamAccess[] = await extractSchema($refs, schemas)
-        info(`Applying repo access for ${repo} with schema ${$refs}`)
-        await applyRepoAccess(octokit, org, repo, refSchema, schemas)
       } else {
         error(`Invalid schema reference: ${JSON.stringify($refs, null, 2)}`)
         throw Error('Invalid schema reference')
