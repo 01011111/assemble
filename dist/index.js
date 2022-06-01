@@ -84,6 +84,7 @@ function applyRepoAccess(octokit, org, repo, teams, schemas) {
                 }
                 if (Array.isArray($refs)) {
                     refs.push(...$refs);
+                    (0, core_1.debug)(`Refs: ${JSON.stringify(refs, null, 2)}`);
                     for (const ref of refs) {
                         const refSchema = yield extractSchema(ref, schemas);
                         (0, core_1.info)(`Applying repo access for ${repo} with schema ${ref}`);
