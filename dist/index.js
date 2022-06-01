@@ -54,26 +54,43 @@ function checkTeams(octokit, org, current, target, parentId = null) {
         }
     });
 }
+function extractSchema(ref, schemas) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const refKey = ref.replace(/^#\/schemas\//, '');
+            const refSchema = schemas[refKey];
+            if (!refSchema) {
+                (0, core_1.error)(`Invalid schema reference: ${ref}`);
+                throw Error('Invalid schema reference');
+            }
+            return refSchema;
+        }
+        catch (err) {
+            (0, core_1.error)(err);
+            throw Error('Cannot apply schema repo access');
+        }
+    });
+}
 function applyRepoAccess(octokit, org, repo, teams, schemas) {
     return __awaiter(this, void 0, void 0, function* () {
         for (const team of teams) {
             const { team: name, permission, $refs } = team;
             if ($refs) {
-                for (const ref of $refs) {
-                    try {
-                        const refKey = ref.replace(/^#\/schemas\//, '');
-                        const refSchema = schemas[refKey];
-                        if (!refSchema) {
-                            (0, core_1.error)(`Invalid schema reference: ${ref}`);
-                            throw Error('Invalid schema reference');
-                        }
-                        (0, core_1.info)(`Applying repo access for ${repo} with schema ${refKey}`);
+                if (Array.isArray($refs)) {
+                    for (const ref of $refs) {
+                        const refSchema = yield extractSchema(ref, schemas);
+                        (0, core_1.info)(`Applying repo access for ${repo} with schema ${ref}`);
                         yield applyRepoAccess(octokit, org, repo, refSchema, schemas);
                     }
-                    catch (err) {
-                        (0, core_1.error)(err);
-                        throw Error('Cannot apply schema repo access');
-                    }
+                }
+                else if (typeof $refs === 'string') {
+                    const refSchema = yield extractSchema($refs, schemas);
+                    (0, core_1.info)(`Applying repo access for ${repo} with schema ${$refs}`);
+                    yield applyRepoAccess(octokit, org, repo, refSchema, schemas);
+                }
+                else {
+                    (0, core_1.error)(`Invalid schema reference: ${JSON.stringify($refs, null, 2)}`);
+                    throw Error('Invalid schema reference');
                 }
             }
             (0, core_1.info)(`Applying ${permission} access for ${repo} to ${name}`);

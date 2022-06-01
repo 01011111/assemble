@@ -5,7 +5,7 @@ export type Permission = 'pull' | 'push' | 'admin' | 'triage' | 'maintain'
 export interface TeamAccess {
   team: string
   permission: Permission
-  $refs: string
+  $refs: string | string[]
 }
 
 export type TeamAccessList = { [key: string]: TeamAccess[]; }

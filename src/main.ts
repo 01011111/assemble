@@ -36,26 +36,40 @@ async function checkTeams (octokit: any, org: string, current: { [key: string]: 
   }
 }
 
+async function extractSchema (ref: string, schemas: TeamAccessList): Promise<TeamAccess[]> {
+  try {
+    const refKey: string = ref.replace(/^#\/schemas\//, '')
+    const refSchema: TeamAccess[] = schemas[refKey]
+    if (!refSchema) {
+      error(`Invalid schema reference: ${ref}`)
+      throw Error('Invalid schema reference')
+    }
+
+    return refSchema
+  } catch (err: any) {
+    error(err)
+    throw Error('Cannot apply schema repo access')
+  }
+}
+
 async function applyRepoAccess (octokit: any, org: string, repo: string, teams: TeamAccess[], schemas: TeamAccessList): Promise<void> {
   for (const team of teams) {
     const { team: name, permission, $refs } = team
 
     if ($refs) {
-      for (const ref of $refs) {
-        try {
-          const refKey: string = ref.replace(/^#\/schemas\//, '')
-          const refSchema: TeamAccess[] = schemas[refKey]
-          if (!refSchema) {
-            error(`Invalid schema reference: ${ref}`)
-            throw Error('Invalid schema reference')
-          }
-
-          info(`Applying repo access for ${repo} with schema ${refKey}`)
+      if (Array.isArray($refs)) {
+        for (const ref of $refs) {
+          const refSchema: TeamAccess[] = await extractSchema(ref, schemas)
+          info(`Applying repo access for ${repo} with schema ${ref}`)
           await applyRepoAccess(octokit, org, repo, refSchema, schemas)
-        } catch (err: any) {
-          error(err)
-          throw Error('Cannot apply schema repo access')
         }
+      } else if (typeof $refs === 'string') {
+        const refSchema: TeamAccess[] = await extractSchema($refs, schemas)
+        info(`Applying repo access for ${repo} with schema ${$refs}`)
+        await applyRepoAccess(octokit, org, repo, refSchema, schemas)
+      } else {
+        error(`Invalid schema reference: ${JSON.stringify($refs, null, 2)}`)
+        throw Error('Invalid schema reference')
       }
     }
 
