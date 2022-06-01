@@ -58,6 +58,7 @@ function extractSchema(ref, schemas) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const refKey = ref.replace(/^#\/schemas\//, '');
+            (0, core_1.debug)(`Parsing ref key: ${ref} -> ${refKey}`);
             const refSchema = schemas[refKey];
             if (!refSchema) {
                 (0, core_1.error)(`Invalid schema reference: ${ref}`);
@@ -67,7 +68,7 @@ function extractSchema(ref, schemas) {
         }
         catch (err) {
             (0, core_1.error)(err);
-            throw Error('Cannot apply schema repo access');
+            throw err;
         }
     });
 }
@@ -133,7 +134,7 @@ function run() {
             const orgTeams = yield (0, github_2.getOrgTeams)(octokit, org);
             (0, core_1.debug)(`The org teams: ${JSON.stringify(orgTeams, null, 2)}`);
             const { teams = [], access = {}, schemas = {} } = yield (0, fs_1.loadConfig)(configPath);
-            (0, core_1.debug)(`The config: ${JSON.stringify({ teams, access }, null, 2)}`);
+            (0, core_1.debug)(`The config: ${JSON.stringify({ teams, access, schemas }, null, 2)}`);
             yield checkTeams(octokit, org, (0, format_1.formatTeams)(orgTeams), teams);
             yield checkRepoAccess(octokit, org, access, schemas);
         }

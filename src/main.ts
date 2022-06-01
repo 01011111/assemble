@@ -39,6 +39,7 @@ async function checkTeams (octokit: any, org: string, current: { [key: string]: 
 async function extractSchema (ref: string, schemas: TeamAccessList): Promise<TeamAccess[]> {
   try {
     const refKey: string = ref.replace(/^#\/schemas\//, '')
+    debug(`Parsing ref key: ${ref} -> ${refKey}`)
     const refSchema: TeamAccess[] = schemas[refKey]
     if (!refSchema) {
       error(`Invalid schema reference: ${ref}`)
@@ -48,7 +49,7 @@ async function extractSchema (ref: string, schemas: TeamAccessList): Promise<Tea
     return refSchema
   } catch (err: any) {
     error(err)
-    throw Error('Cannot apply schema repo access')
+    throw err
   }
 }
 
@@ -121,7 +122,7 @@ async function run (): Promise<void> {
     debug(`The org teams: ${JSON.stringify(orgTeams, null, 2)}`)
 
     const { teams = [], access = {}, schemas = {} }: AssembleConfig = await loadConfig(configPath)
-    debug(`The config: ${JSON.stringify({ teams, access }, null, 2)}`)
+    debug(`The config: ${JSON.stringify({ teams, access, schemas }, null, 2)}`)
 
     await checkTeams(octokit, org, formatTeams(orgTeams), teams)
 
