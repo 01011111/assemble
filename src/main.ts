@@ -65,7 +65,7 @@ async function applyRepoAccess (octokit: any, org: string, repo: string, teams: 
         refs.push($refs)
       }
 
-      if (Array.isArray($refs)) {
+      if (Array.isArray($refs) || refs.length > 0) {
         refs.push(...$refs)
         debug(`Refs: ${JSON.stringify(refs, null, 2)}`)
         for (const ref of refs) {

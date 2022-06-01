@@ -82,7 +82,7 @@ function applyRepoAccess(octokit, org, repo, teams, schemas) {
                 if (typeof $refs === 'string') {
                     refs.push($refs);
                 }
-                if (Array.isArray($refs)) {
+                if (Array.isArray($refs) || refs.length > 0) {
                     refs.push(...$refs);
                     (0, core_1.debug)(`Refs: ${JSON.stringify(refs, null, 2)}`);
                     for (const ref of refs) {
