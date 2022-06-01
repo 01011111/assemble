@@ -74,6 +74,7 @@ function extractSchema(ref, schemas) {
 }
 function applyRepoAccess(octokit, org, repo, teams, schemas) {
     return __awaiter(this, void 0, void 0, function* () {
+        (0, core_1.debug)(JSON.stringify({ repo, teams, schemas }, null, 2));
         for (const team of teams) {
             const { team: name, permission, $refs } = team;
             (0, core_1.debug)(JSON.stringify({ team, name, permission, $refs }, null, 2));
@@ -108,10 +109,12 @@ function checkRepoAccess(octokit, org, config, schemas) {
     return __awaiter(this, void 0, void 0, function* () {
         const repoList = Object.keys(config);
         if (repoList.indexOf('*') > -1) {
+            (0, core_1.debug)('Applying repo access for all repos');
             const orgRepos = yield (0, github_2.getOrgRepos)(octokit, org);
             const promises = orgRepos.map(repo => applyRepoAccess(octokit, org, repo.name, config['*'], schemas));
             yield Promise.all(promises);
         }
+        (0, core_1.debug)(`Repos to go over: ${JSON.stringify(repoList, null, 2)}`);
         for (const repoKey in config) {
             if (repoKey === '*') {
                 continue;

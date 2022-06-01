@@ -54,6 +54,7 @@ async function extractSchema (ref: string, schemas: TeamAccessList): Promise<Tea
 }
 
 async function applyRepoAccess (octokit: any, org: string, repo: string, teams: TeamAccess[], schemas: TeamAccessList): Promise<void> {
+  debug(JSON.stringify({ repo, teams, schemas }, null, 2))
   for (const team of teams) {
     const { team: name, permission, $refs } = team
     debug(JSON.stringify({ team, name, permission, $refs }, null, 2))
@@ -92,12 +93,14 @@ async function checkRepoAccess (octokit: any, org: string, config: TeamAccessLis
   const repoList = Object.keys(config)
 
   if (repoList.indexOf('*') > -1) {
+    debug('Applying repo access for all repos')
     const orgRepos = await getOrgRepos(octokit, org)
 
     const promises = orgRepos.map(repo => applyRepoAccess(octokit, org, repo.name, config['*'], schemas))
     await Promise.all(promises)
   }
 
+  debug(`Repos to go over: ${JSON.stringify(repoList, null, 2)}`)
   for (const repoKey in config) {
     if (repoKey === '*') {
       continue
