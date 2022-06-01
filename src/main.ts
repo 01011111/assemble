@@ -80,12 +80,12 @@ async function applyRepoAccess (octokit: any, org: string, repo: string, teams: 
         error(`Invalid schema reference: ${JSON.stringify($refs, null, 2)}`)
         throw Error('Invalid schema reference')
       }
+    } else {
+      info(`Applying ${permission} access for ${repo} to ${name}`)
+      const slug = formatTeamName(name)
+
+      await updateTeamAccess(octokit, slug, org, repo, permission)
     }
-
-    info(`Applying ${permission} access for ${repo} to ${name}`)
-    const slug = formatTeamName(name)
-
-    await updateTeamAccess(octokit, slug, org, repo, permission)
   }
 }
 

@@ -99,9 +99,11 @@ function applyRepoAccess(octokit, org, repo, teams, schemas) {
                     throw Error('Invalid schema reference');
                 }
             }
-            (0, core_1.info)(`Applying ${permission} access for ${repo} to ${name}`);
-            const slug = (0, format_1.formatTeamName)(name);
-            yield (0, github_2.updateTeamAccess)(octokit, slug, org, repo, permission);
+            else {
+                (0, core_1.info)(`Applying ${permission} access for ${repo} to ${name}`);
+                const slug = (0, format_1.formatTeamName)(name);
+                yield (0, github_2.updateTeamAccess)(octokit, slug, org, repo, permission);
+            }
         }
     });
 }
