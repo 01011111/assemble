@@ -42,7 +42,7 @@ async function extractSchema (ref: string, schemas: TeamAccessList): Promise<Tea
     debug(`Parsing ref key: ${ref} -> ${refKey}`)
     const refSchema: TeamAccess[] = schemas[refKey]
     if (!refSchema) {
-      error(`Invalid schema reference: ${ref}`)
+      error(`Invalid schema reference: ${ref} / ${refKey}`)
       throw Error('Invalid schema reference')
     }
 

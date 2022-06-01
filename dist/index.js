@@ -61,7 +61,7 @@ function extractSchema(ref, schemas) {
             (0, core_1.debug)(`Parsing ref key: ${ref} -> ${refKey}`);
             const refSchema = schemas[refKey];
             if (!refSchema) {
-                (0, core_1.error)(`Invalid schema reference: ${ref}`);
+                (0, core_1.error)(`Invalid schema reference: ${ref} / ${refKey}`);
                 throw Error('Invalid schema reference');
             }
             return refSchema;
