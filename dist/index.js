@@ -25,11 +25,11 @@ function checkTeam(octokit, org, current, team, parentId = null) {
     return __awaiter(this, void 0, void 0, function* () {
         const slug = (0, format_1.formatTeamName)(team);
         if (current[slug]) {
-            (0, core_1.debug)(`Team ${team} already exists`);
+            (0, core_1.notice)(`Team ${team} already exists`);
             return current[slug];
         }
         else {
-            (0, core_1.debug)(`Creating team ${team}`);
+            (0, core_1.info)(`Creating team ${team}`);
             const newTeam = yield (0, github_2.createTeam)(octokit, org, team, parentId);
             return newTeam;
         }
@@ -48,28 +48,46 @@ function checkTeams(octokit, org, current, target, parentId = null) {
                 }
             }
             else {
-                throw new Error(`Invalid team configuration: ${JSON.stringify(team)}`);
+                (0, core_1.error)(`Invalid team configuration: ${JSON.stringify(team, null, 2)}`);
+                throw new Error('Cannot parse team configuration');
             }
         }
     });
 }
-function applyRepoAccess(octokit, org, repo, teams) {
+function applyRepoAccess(octokit, org, repo, teams, schemas) {
     return __awaiter(this, void 0, void 0, function* () {
-        (0, core_1.debug)(`Applying repo access for ${repo}`);
         for (const team of teams) {
-            const { team: name, permission } = team;
-            (0, core_1.debug)(`Applying ${permission} access for ${repo} to ${name}`);
+            const { team: name, permission, $refs } = team;
+            if ($refs) {
+                for (const ref of $refs) {
+                    try {
+                        const refKey = ref.replace(/^#\/schemas\//, '');
+                        const refSchema = schemas[refKey];
+                        if (!refSchema) {
+                            (0, core_1.error)(`Invalid schema reference: ${ref}`);
+                            throw Error('Invalid schema reference');
+                        }
+                        (0, core_1.info)(`Applying repo access for ${repo} with schema ${refKey}`);
+                        yield applyRepoAccess(octokit, org, repo, refSchema, schemas);
+                    }
+                    catch (err) {
+                        (0, core_1.error)(err);
+                        throw Error('Cannot apply schema repo access');
+                    }
+                }
+            }
+            (0, core_1.info)(`Applying ${permission} access for ${repo} to ${name}`);
             const slug = (0, format_1.formatTeamName)(name);
             yield (0, github_2.updateTeamAccess)(octokit, slug, org, repo, permission);
         }
     });
 }
-function checkRepoAccess(octokit, org, config) {
+function checkRepoAccess(octokit, org, config, schemas) {
     return __awaiter(this, void 0, void 0, function* () {
         const repoList = Object.keys(config);
         if (repoList.indexOf('*') > -1) {
             const orgRepos = yield (0, github_2.getOrgRepos)(octokit, org);
-            const promises = orgRepos.map(repo => applyRepoAccess(octokit, org, repo.name, config['*']));
+            const promises = orgRepos.map(repo => applyRepoAccess(octokit, org, repo.name, config['*'], schemas));
             yield Promise.all(promises);
         }
         for (const repoKey in config) {
@@ -77,7 +95,7 @@ function checkRepoAccess(octokit, org, config) {
                 continue;
             }
             else {
-                yield applyRepoAccess(octokit, org, repoKey, config[repoKey]);
+                yield applyRepoAccess(octokit, org, repoKey, config[repoKey], schemas);
             }
         }
     });
@@ -91,19 +109,20 @@ function run() {
             const octokit = (0, github_1.getOctokit)(GH_TOKEN);
             const org = (_a = github_1.context.repo) === null || _a === void 0 ? void 0 : _a.owner;
             if (!org) {
-                (0, core_1.debug)(`No organization found: ${JSON.stringify(github_1.context.payload, null, 2)}`);
+                (0, core_1.error)(`No organization found: ${JSON.stringify(github_1.context.payload, null, 2)}`);
                 throw Error('Missing organization in the context payload');
             }
             const orgTeams = yield (0, github_2.getOrgTeams)(octokit, org);
             (0, core_1.debug)(`The org teams: ${JSON.stringify(orgTeams, null, 2)}`);
-            const { teams = [], access = {} } = yield (0, fs_1.loadConfig)(configPath);
+            const { teams = [], access = {}, schemas = {} } = yield (0, fs_1.loadConfig)(configPath);
             (0, core_1.debug)(`The config: ${JSON.stringify({ teams, access }, null, 2)}`);
             yield checkTeams(octokit, org, (0, format_1.formatTeams)(orgTeams), teams);
-            yield checkRepoAccess(octokit, org, access);
+            yield checkRepoAccess(octokit, org, access, schemas);
         }
-        catch (error) {
-            if (error instanceof Error)
-                (0, core_1.setFailed)(error.message);
+        catch (err) {
+            (0, core_1.error)(err);
+            if (err instanceof Error)
+                (0, core_1.setFailed)(err.message);
         }
     });
 }

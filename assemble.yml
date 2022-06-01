@@ -11,10 +11,7 @@ teams:
 
 access:
   '*':
-    - team: Admin
-      permission: admin
-    - team: QA
-      permission: pull
+    - $refs: '#/schemas/baseline'
 
   assemble:
     - team: BackEnd
@@ -27,3 +24,10 @@ access:
       permission: push
     - team: Assemble-QA
       permission: triage
+
+schemas:
+  baseline:
+    - team: Admin
+      permission: admin
+    - team: QA
+      permission: pull

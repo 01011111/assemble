@@ -1,5 +1,21 @@
 export type ConfigTeams = string | { [key: string]: string[] | any }[]
 
+export type Permission = 'pull' | 'push' | 'admin' | 'triage' | 'maintain'
+
+export interface TeamAccess {
+  team: string
+  permission: Permission
+  $refs: string
+}
+
+export type TeamAccessList = { [key: string]: TeamAccess[]; }
+
+export type AssembleConfig = {
+  teams: ConfigTeams,
+  access: TeamAccessList,
+  schemas: TeamAccessList
+}
+
 export interface CreateTeamInput {
   org: string
   name: string
@@ -21,11 +37,4 @@ export interface Team {
 export interface Repo {
   name: string
   id: number
-}
-
-export type Permission = 'pull' | 'push' | 'admin' | 'triage' | 'maintain'
-
-export interface TeamAccess {
-  team: string
-  permission: Permission
 }
