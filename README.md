@@ -6,13 +6,15 @@
 
 Create a `assemble.yml` file in your repository.
 
-There's 2 sections to it: teams and access.
+There's 3 sections to it: teams, access and schemas.
 
 The Teams section will create teams in your organization that is listed in the file but is missing from the organization.  
 It **will not** delete teams that exist but are not present in the file.
 
 The Access section will grant access to listed teams with specific permission to listed repositories.  
 If you want to grant access too all repositories, you can use `'*'` for the name of the repository (don't forget the quotes or yaml will not consider it a string).
+
+The Schemas section is to define pattern of access that you reuse accross repositories in the access section.
 
 #### Example
 
@@ -27,10 +29,7 @@ teams:
 
 access:
   '*':
-    - team: Admin
-      permission: admin
-    - team: QA
-      permission: pull
+    - $refs: '#/schemas/baseline'
 
   my_repo:
     - team: BackEnd
@@ -40,7 +39,12 @@ access:
     - team: QA
       permission: triage
 
-
+schemas:
+  baseline:
+    - team: Admin
+      permission: admin
+    - team: QA
+      permission: pull
 ```
 
 ### GitHub Workflow
@@ -61,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: 01011111/assemble@1.3
+      - uses: 01011111/assemble@1.4
         with:
           token: ${{ secrets.ORG_TOKEN }}
 
@@ -74,7 +78,7 @@ You can reference a different file for the configuration - but the content has t
 Just add an input in the workflow:
 
 ```yaml
-uses: 01011111/assemble@v1.3
+uses: 01011111/assemble@v1.4
   with:
     token: ${{ secrets.ORG_TOKEN }}
     config: './github_teams.yaml'
