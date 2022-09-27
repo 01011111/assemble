@@ -71,7 +71,7 @@ jobs:
 
 ```
 
-You will need a token that has the `admin:org` and `repo` scopes.  
+You will need a token that has the `admin:org` scopes.  
 You can create a token in the [GitHub Developer Settings](https://github.com/settings/tokens/new) and add it to your repository secrets.
 
 
