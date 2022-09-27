@@ -71,6 +71,10 @@ jobs:
 
 ```
 
+You will need a token that has the `admin:org` and `repo` scopes.  
+You can create a token in the [GitHub Developer Settings](https://github.com/settings/tokens/new) and add it to your repository secrets.
+
+
 ### Using a different file
 
 You can reference a different file for the configuration - but the content has to be yaml.
